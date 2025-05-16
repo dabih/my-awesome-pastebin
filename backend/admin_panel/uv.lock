@@ -11,6 +11,7 @@ dependencies = [
     { name = "django" },
     { name = "django-redis" },
     { name = "flower" },
+    { name = "nanoid" },
     { name = "psycopg2-binary" },
     { name = "redis" },
 ]
@@ -19,8 +20,9 @@ dependencies = [
 requires-dist = [
     { name = "celery", specifier = "==5.5.*" },
     { name = "django", specifier = "==5.2.*" },
-    { name = "django-redis", specifier = ">=5.4.0" },
+    { name = "django-redis", specifier = ">=5.4" },
     { name = "flower", specifier = "==2.0.*" },
+    { name = "nanoid", specifier = ">=2.0.0" },
     { name = "psycopg2-binary", specifier = "==2.9.*" },
     { name = "redis", specifier = "==5.1.*" },
 ]
@@ -196,6 +198,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/60/0a/128b65651ed8120460fc5af754241ad595eac74993115ec0de4f2d7bc459/kombu-5.5.3.tar.gz", hash = "sha256:021a0e11fcfcd9b0260ef1fb64088c0e92beb976eb59c1dfca7ddd4ad4562ea2", size = 461784, upload-time = "2025-04-16T12:46:17.014Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5d/35/1407fb0b2f5b07b50cbaf97fce09ad87d3bfefbf64f7171a8651cd8d2f68/kombu-5.5.3-py3-none-any.whl", hash = "sha256:5b0dbceb4edee50aa464f59469d34b97864be09111338cfb224a10b6a163909b", size = 209921, upload-time = "2025-04-16T12:46:15.139Z" },
+]
+
+[[package]]
+name = "nanoid"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b7/9d/0250bf5935d88e214df469d35eccc0f6ff7e9db046fc8a9aeb4b2a192775/nanoid-2.0.0.tar.gz", hash = "sha256:5a80cad5e9c6e9ae3a41fa2fb34ae189f7cb420b2a5d8f82bd9d23466e4efa68", size = 3290, upload-time = "2018-11-20T14:45:51.578Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2e/0d/8630f13998638dc01e187fadd2e5c6d42d127d08aeb4943d231664d6e539/nanoid-2.0.0-py3-none-any.whl", hash = "sha256:90aefa650e328cffb0893bbd4c236cfd44c48bc1f2d0b525ecc53c3187b653bb", size = 5844, upload-time = "2018-11-20T14:45:50.165Z" },
 ]
 
 [[package]]

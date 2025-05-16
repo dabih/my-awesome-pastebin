@@ -8,6 +8,7 @@ dependencies = [
     "psycopg2-binary==2.9.*",
     "redis==5.1.*",
     "django-redis>=5.4.*",
+    "nanoid>=2.0.*",
 ]
 
 [tool.ruff]
