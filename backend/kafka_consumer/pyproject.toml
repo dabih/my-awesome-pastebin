@@ -1,0 +1,15 @@
+[project]
+name = "kafka_consumer"
+version = "0.1.0"
+dependencies = [
+    "confluent-kafka==2.0.*",
+    "psycopg2-binary==2.9.*",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.mypy]
+python_version = "3.13"
+strict = true

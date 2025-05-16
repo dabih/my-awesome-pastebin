@@ -1,0 +1,19 @@
+[project]
+name = "admin_panel"
+version = "0.1.0"
+dependencies = [
+    "django==5.2.*",
+    "celery==5.5.*",
+    "flower==2.0.*",
+    "psycopg2-binary==2.9.*",
+    "redis==5.1.*",
+    "django-redis>=5.4.*",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
