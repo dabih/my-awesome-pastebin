@@ -1,4 +1,5 @@
 [project]
+requires-python = ">=3.10"
 name = "kafka_consumer"
 version = "0.1.0"
 dependencies = [
@@ -13,3 +14,10 @@ target-version = "py313"
 [tool.mypy]
 python_version = "3.13"
 strict = true
+
+[dependency-groups]
+dev = [
+    "mypy>=1.15.0",
+    "pytest>=8.3.5",
+    "ruff>=0.11.10",
+]
