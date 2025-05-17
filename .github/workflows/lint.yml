@@ -1,0 +1,29 @@
+name: linters
+
+on:
+  - pull_request
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Compose
+        uses: docker/setup-buildx-action@v3
+        with:
+          version: 'v0.23.0'
+
+      - name: Install Docker Compose
+        run: |
+          curl -L "https://github.com/docker/compose/releases/download/v2.29.2/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
+          chmod +x /usr/local/bin/docker-compose
+          docker-compose --version
+
+      - name: Build Docker images
+        run: docker-compose build
+
+      - name: Run linting
+        run: make run-lint-all

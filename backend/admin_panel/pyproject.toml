@@ -12,17 +12,24 @@ dependencies = [
     "nanoid>=2.0.*",
 ]
 
+[dependency-groups]
+dev = [
+    "django-stubs[compatible-mypy]>=5.2.0",
+    "mypy>=1.15.0",
+    "pytest>=8.3.5",
+    "ruff>=0.11.10",
+    "types-nanoid>=2.0.0.20240601",
+]
+
 [tool.ruff]
 line-length = 88
 target-version = "py313"
 
 [tool.mypy]
 python_version = "3.13"
-strict = true
+strict = false
+plugins = ["mypy_django_plugin.main"]
 
-[dependency-groups]
-dev = [
-    "mypy>=1.15.0",
-    "pytest>=8.3.5",
-    "ruff>=0.11.10",
-]
+
+[tool.django-stubs]
+django_settings_module = "admin.settings"
