@@ -1,10 +1,10 @@
-name: linters
+name: audit
 
 on:
   - pull_request
 
 jobs:
-  lint:
+  audit:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -27,4 +27,4 @@ jobs:
         run: docker-compose build
 
       - name: Run linting
-        run: make run-lint-all
+        run: make run-audit-all
