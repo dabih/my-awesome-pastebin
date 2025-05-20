@@ -82,6 +82,7 @@ services:
     build:
       context: ./backend/admin_panel
       dockerfile: Dockerfile
+    command: python manage.py runserver 0.0.0.0:8000
     depends_on:
       postgres:
         condition: service_healthy
@@ -96,15 +97,17 @@ services:
     volumes:
       - ./backend/admin_panel:/app
     labels:
-      - "traefik.http.routers.admin-panel.rule=Host(`admin.localhost`)"
-      - "traefik.http.routers.admin-panel.entrypoints=web"
+      - "traefik.enable=true"
+      - "traefik.http.routers.admin_panel.rule=Host(`admin.localhost`)"
+      - "traefik.http.routers.admin_panel.entrypoints=web"
+      - "traefik.http.services.admin_panel.loadbalancer.server.port=8000"
 
   # Celery Worker
   celery_worker:
     build:
       context: ./backend/admin_panel
       dockerfile: Dockerfile
-    command: celery -A src worker --loglevel=info
+    command: celery -A admin.celery worker --loglevel=info
     depends_on:
       admin_panel:
         condition: service_started
@@ -124,7 +127,7 @@ services:
     build:
       context: ./backend/admin_panel
       dockerfile: Dockerfile
-    command: celery -A src beat --loglevel=info
+    command: celery -A admin.celery beat --loglevel=info
     depends_on:
       admin_panel:
         condition: service_started
