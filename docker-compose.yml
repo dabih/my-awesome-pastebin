@@ -1,0 +1,217 @@
+services:
+  # База данных
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-pastebin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pastebin}
+      POSTGRES_DB: ${POSTGRES_DB:-pastebin}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "pastebin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Кэш
+  redis:
+    image: redis:7.2
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Очередь для Celery
+  rabbitmq:
+    image: rabbitmq:4.1-management
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Kafka и Zookeeper
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--list", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      AUTH_TYPE: "LOGIN_FORM"
+      SPRING_SECURITY_USER_NAME: ${KAFKA_UI_USER:-admin}
+      SPRING_SECURITY_USER_PASSWORD: ${KAFKA_UI_PASSWORD:-admin}
+    labels:
+      - "traefik.http.routers.kafka-ui.rule=Host(`kafka-ui.localhost`)"
+      - "traefik.http.routers.kafka-ui.entrypoints=web"
+
+  # Admin Panel
+  admin_panel:
+    build:
+      context: ./backend/admin_panel
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-pastebin}:${POSTGRES_PASSWORD:-pastebin}@postgres:5432/${POSTGRES_DB:-pastebin}
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672//
+    volumes:
+      - ./backend/admin_panel:/app
+    labels:
+      - "traefik.http.routers.admin-panel.rule=Host(`admin.localhost`)"
+      - "traefik.http.routers.admin-panel.entrypoints=web"
+
+  # Celery Worker
+  celery_worker:
+    build:
+      context: ./backend/admin_panel
+      dockerfile: Dockerfile
+    command: celery -A src worker --loglevel=info
+    depends_on:
+      admin_panel:
+        condition: service_started
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-pastebin}:${POSTGRES_PASSWORD:-pastebin}@postgres:5432/${POSTGRES_DB:-pastebin}
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672//
+    volumes:
+      - ./backend/admin_panel:/app
+
+  # Celery Beat
+  celery_beat:
+    build:
+      context: ./backend/admin_panel
+      dockerfile: Dockerfile
+    command: celery -A src beat --loglevel=info
+    depends_on:
+      admin_panel:
+        condition: service_started
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-pastebin}:${POSTGRES_PASSWORD:-pastebin}@postgres:5432/${POSTGRES_DB:-pastebin}
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672//
+    volumes:
+      - ./backend/admin_panel:/app
+
+  # Celery Flower
+  celery_flower:
+    build:
+      context: ./backend/admin_panel
+      dockerfile: Dockerfile
+    command: celery -A src flower --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin}
+    depends_on:
+      celery_worker:
+        condition: service_started
+    environment:
+      CELERY_BROKER_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672//
+    labels:
+      - "traefik.http.routers.celery-flower.rule=Host(`flower.localhost`)"
+      - "traefik.http.routers.celery-flower.entrypoints=web"
+
+  # Web API (3 экземпляра через scale)
+  web_api:
+    build:
+      context: ./backend/web_api
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-pastebin}:${POSTGRES_PASSWORD:-pastebin}@postgres:5432/${POSTGRES_DB:-pastebin}
+      REDIS_URL: redis://redis:6379/0
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    volumes:
+      - ./backend/web_api:/app
+    labels:
+      - "traefik.http.routers.web-api.rule=Host(`web-api.localhost`)"
+      - "traefik.http.routers.web-api.entrypoints=web"
+    deploy:
+      replicas: 3
+
+  # Kafka Consumer
+  kafka_consumer:
+    build:
+      context: ./backend/kafka_consumer
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-pastebin}:${POSTGRES_PASSWORD:-pastebin}@postgres:5432/${POSTGRES_DB:-pastebin}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_GROUP_ID: pastebin-consumer-group
+    volumes:
+      - ./backend/kafka_consumer:/app
+
+  # Load Balancer (Traefik)
+  traefik:
+    image: traefik:v3.0
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080" # Traefik dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - web_api
+      - admin_panel
+      - celery_flower
+      - kafka-ui
+
+volumes:
+  postgres_data:
