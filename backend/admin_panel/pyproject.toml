@@ -10,6 +10,8 @@ dependencies = [
     "redis==5.1.*",
     "django-redis>=5.4.*",
     "nanoid>=2.0.*",
+    "django-celery-beat>=2.8.1",
+    "django-celery-results>=2.6.0",
 ]
 
 [dependency-groups]
@@ -20,12 +22,14 @@ dev = [
     "flake8-bandit>=4.1.1",
     "flake8-docstrings>=1.7.0",
     "flake8-isort>=6.1.2",
+    "flake8-pyproject>=1.2.3",
     "flake8-quotes>=3.4.0",
     "flake8-string-format>=0.3.0",
     "isort>=6.0.1",
     "mypy>=1.15.0",
     "pip-audit>=2.9.0",
     "pylint>=3.3.7",
+    "pylint-django>=2.6.1",
     "pytest>=8.3.5",
     "ruff>=0.11.10",
     "types-nanoid>=2.0.0.20240601",
@@ -39,6 +43,7 @@ target-version = "py313"
 python_version = "3.13"
 strict = false
 plugins = ["mypy_django_plugin.main"]
+ignore_missing_imports = true
 
 [tool.django-stubs]
 django_settings_module = "admin.settings"
@@ -176,6 +181,9 @@ count = true
 
 
 [tool.pylint.main]
+load-plugins = [
+    "pylint_django",
+]
 ignore = [
     ".git",
     "__pycache__",
@@ -186,6 +194,7 @@ ignore = [
     "settings",
     "snapshots",
 ]
+django-settings-module = "admin.settings"
 
 [tool.pylint.master]
 

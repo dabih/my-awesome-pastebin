@@ -7,8 +7,8 @@ lint:
 	uv run isort .
 	uv run mypy .
 	uv run black --check .
-	uv run flake8 src
-	uv run pylint src
+	uv run flake8 src --inline-quotes '"'
+	uv run pylint .
 	@echo "Linting completed."
 
 test:
