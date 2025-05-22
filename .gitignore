@@ -18,6 +18,13 @@ ENV/
 env.bak/
 venv.bak/
 
+
+# Celery Beat local schedule files
+celerybeat-schedule
+celerybeat-schedule-shm
+celerybeat-schedule-wal
+
+
 #*.py[cod]
 #*$py.class
 #

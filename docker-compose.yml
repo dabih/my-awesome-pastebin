@@ -147,15 +147,17 @@ services:
     build:
       context: ./backend/admin_panel
       dockerfile: Dockerfile
-    command: celery -A src flower --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin}
+    command: celery -A admin.celery flower --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin}
     depends_on:
       celery_worker:
         condition: service_started
     environment:
       CELERY_BROKER_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672//
     labels:
+      - "traefik.enable=true"
       - "traefik.http.routers.celery-flower.rule=Host(`flower.localhost`)"
       - "traefik.http.routers.celery-flower.entrypoints=web"
+      - "traefik.http.services.celery-flower.loadbalancer.server.port=5555"
 
   # Web API (3 экземпляра через scale)
   web_api:

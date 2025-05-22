@@ -1,4 +1,5 @@
 from django.db import models
+
 import nanoid
 
 
@@ -10,7 +11,7 @@ class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
@@ -26,7 +27,7 @@ class Paste(models.Model):
     deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.title
 
 
