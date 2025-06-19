@@ -77,6 +77,22 @@ services:
       - "traefik.http.routers.kafka-ui.rule=Host(`kafka-ui.localhost`)"
       - "traefik.http.routers.kafka-ui.entrypoints=web"
 
+# Migration Runner
+  migration_runner:
+    build:
+      context: ./backend/admin_panel
+      dockerfile: Dockerfile
+    command: python manage.py migrate --noinput
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-pastebin}:${POSTGRES_PASSWORD:-pastebin}@postgres:5432/${POSTGRES_DB:-pastebin}
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672//
+    volumes:
+      - ./backend/admin_panel:/app
+
   # Admin Panel
   admin_panel:
     build:
@@ -84,6 +100,8 @@ services:
       dockerfile: Dockerfile
     command: python manage.py runserver 0.0.0.0:8000
     depends_on:
+      migration_runner:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
       redis:
@@ -109,6 +127,8 @@ services:
       dockerfile: Dockerfile
     command: celery -A admin.celery worker --loglevel=info
     depends_on:
+      migration_runner:
+        condition: service_completed_successfully
       admin_panel:
         condition: service_started
       redis:
@@ -129,6 +149,8 @@ services:
       dockerfile: Dockerfile
     command: celery -A admin.celery beat --loglevel=info
     depends_on:
+      migration_runner:
+        condition: service_completed_successfully
       admin_panel:
         condition: service_started
       redis:
@@ -149,6 +171,8 @@ services:
       dockerfile: Dockerfile
     command: celery -A admin.celery flower --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin}
     depends_on:
+      migration_runner:
+        condition: service_completed_successfully
       celery_worker:
         condition: service_started
     environment:
@@ -165,6 +189,8 @@ services:
       context: ./backend/web_api
       dockerfile: Dockerfile
     depends_on:
+      migration_runner:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
       redis:
