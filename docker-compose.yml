@@ -77,12 +77,31 @@ services:
       - "traefik.http.routers.kafka-ui.rule=Host(`kafka-ui.localhost`)"
       - "traefik.http.routers.kafka-ui.entrypoints=web"
 
+# Migration Runner
+  migration_runner:
+    build:
+      context: ./backend/admin_panel
+      dockerfile: Dockerfile
+    command: python manage.py migrate --noinput
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-pastebin}:${POSTGRES_PASSWORD:-pastebin}@postgres:5432/${POSTGRES_DB:-pastebin}
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672//
+    volumes:
+      - ./backend/admin_panel:/app
+
   # Admin Panel
   admin_panel:
     build:
       context: ./backend/admin_panel
       dockerfile: Dockerfile
+    command: python manage.py runserver 0.0.0.0:8000
     depends_on:
+      migration_runner:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
       redis:
@@ -96,16 +115,20 @@ services:
     volumes:
       - ./backend/admin_panel:/app
     labels:
-      - "traefik.http.routers.admin-panel.rule=Host(`admin.localhost`)"
-      - "traefik.http.routers.admin-panel.entrypoints=web"
+      - "traefik.enable=true"
+      - "traefik.http.routers.admin_panel.rule=Host(`admin.localhost`)"
+      - "traefik.http.routers.admin_panel.entrypoints=web"
+      - "traefik.http.services.admin_panel.loadbalancer.server.port=8000"
 
   # Celery Worker
   celery_worker:
     build:
       context: ./backend/admin_panel
       dockerfile: Dockerfile
-    command: celery -A src worker --loglevel=info
+    command: celery -A admin.celery worker --loglevel=info
     depends_on:
+      migration_runner:
+        condition: service_completed_successfully
       admin_panel:
         condition: service_started
       redis:
@@ -124,8 +147,10 @@ services:
     build:
       context: ./backend/admin_panel
       dockerfile: Dockerfile
-    command: celery -A src beat --loglevel=info
+    command: celery -A admin.celery beat --loglevel=info
     depends_on:
+      migration_runner:
+        condition: service_completed_successfully
       admin_panel:
         condition: service_started
       redis:
@@ -144,15 +169,19 @@ services:
     build:
       context: ./backend/admin_panel
       dockerfile: Dockerfile
-    command: celery -A src flower --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin}
+    command: celery -A admin.celery flower --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin}
     depends_on:
+      migration_runner:
+        condition: service_completed_successfully
       celery_worker:
         condition: service_started
     environment:
       CELERY_BROKER_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672//
     labels:
+      - "traefik.enable=true"
       - "traefik.http.routers.celery-flower.rule=Host(`flower.localhost`)"
       - "traefik.http.routers.celery-flower.entrypoints=web"
+      - "traefik.http.services.celery-flower.loadbalancer.server.port=5555"
 
   # Web API (3 экземпляра через scale)
   web_api:
@@ -160,6 +189,8 @@ services:
       context: ./backend/web_api
       dockerfile: Dockerfile
     depends_on:
+      migration_runner:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
       redis:
