@@ -82,7 +82,7 @@ services:
     build:
       context: ./backend/admin_panel
       dockerfile: Dockerfile
-    command: python manage.py migrate --noinput
+    command: sh -c "python manage.py migrate --noinput && python manage.py setup_defaults"
     depends_on:
       postgres:
         condition: service_healthy
