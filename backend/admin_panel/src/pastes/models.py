@@ -32,9 +32,6 @@ class Paste(models.Model):
 
 
 class VisitCount(models.Model):
-    paste = models.ForeignKey(Paste, on_delete=models.CASCADE)
+    paste = models.ForeignKey(Paste, on_delete=models.CASCADE, unique=True)
     count = models.IntegerField(default=0)
     last_updated = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        unique_together = ("paste",)

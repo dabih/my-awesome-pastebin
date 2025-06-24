@@ -1,7 +1,11 @@
 import os
+
+# from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
-from django.contrib.auth.models import User
-from django_celery_beat.models import PeriodicTask, CrontabSchedule
+
+from django_celery_beat.models import CrontabSchedule, PeriodicTask
+
 
 class Command(BaseCommand):
     help = "Sets up defaults"
@@ -10,24 +14,17 @@ class Command(BaseCommand):
         self.setup_superuser()
         self.setup_celery_task()
 
-
     def setup_superuser(self):
+        user = get_user_model()
         username = os.environ.get("DEFAULT_ADMIN_USERNAME", "admin")
         email = os.environ.get("DEFAULT_ADMIN_EMAIL", "admin@example.com")
         password = os.environ.get("DEFAULT_ADMIN_PASSWORD", "admin")
 
-        if not User.objects.filter(username=username).exists():
-            User.objects.create_superuser(
-                username=username,
-                email=email,
-                password=password,
-                is_staff=True,
-                is_superuser=True
-            )
+        if not user.objects.filter(username=username).exists():
+            user.objects.create_superuser(username=username, email=email, password=password, is_staff=True, is_superuser=True)
             self.stdout.write(self.style.SUCCESS(f"Successfully created superuser: {username}"))
         else:
             self.stdout.write(self.style.WARNING(f"Superuser {username} already exists, skipping creation"))
-
 
     def setup_celery_task(self):
         task_name = "delete_expired_pastes"
