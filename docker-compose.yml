@@ -149,8 +149,6 @@ services:
       dockerfile: Dockerfile
     command: celery -A admin.celery beat --loglevel=info
     depends_on:
-      migration_runner:
-        condition: service_completed_successfully
       admin_panel:
         condition: service_started
       redis:
@@ -171,8 +169,6 @@ services:
       dockerfile: Dockerfile
     command: celery -A admin.celery flower --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin}
     depends_on:
-      migration_runner:
-        condition: service_completed_successfully
       celery_worker:
         condition: service_started
     environment:

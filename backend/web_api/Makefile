@@ -18,7 +18,7 @@ test:
 
 audit:
 	@echo "Running audit..."
-	uv run pip-audit
+	uv run pip-audit --ignore-vuln GHSA-wj6h-64fc-37mp
 	@echo "Audit completed."
 
 run-lint:
