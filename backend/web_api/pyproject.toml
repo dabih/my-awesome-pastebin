@@ -3,7 +3,7 @@ requires-python = ">=3.10"
 name = "web_api"
 version = "0.1.0"
 dependencies = [
-    "fastapi==0.116.*",
+    "fastapi==0.121.*",
     "uvicorn==0.32.*",
     "sqlalchemy==2.0.*",
     "psycopg2-binary==2.9.*",
