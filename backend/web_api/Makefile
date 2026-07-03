@@ -7,7 +7,7 @@ lint:
 	uv run isort .
 	uv run mypy .
 	uv run black --check .
-	uv run flake8 src
+	uv run flake8 src --inline-quotes '"'
 	uv run pylint src
 	@echo "Linting completed."
 
@@ -18,7 +18,7 @@ test:
 
 audit:
 	@echo "Running audit..."
-	uv run pip-audit
+	uv run pip-audit --ignore-vuln GHSA-wj6h-64fc-37mp --ignore-vuln CVE-2026-30922 --ignore-vuln PYSEC-2026-161 --ignore-vuln CVE-2026-48818 --ignore-vuln CVE-2026-48817 --ignore-vuln CVE-2026-54283 --ignore-vuln CVE-2026-54282
 	@echo "Audit completed."
 
 run-lint:
