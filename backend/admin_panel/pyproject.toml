@@ -31,9 +31,13 @@ dev = [
     "pylint>=3.3.7",
     "pylint-django>=2.6.1",
     "pytest>=8.3.5",
+    "pytest-django>=4.11.0",
     "ruff>=0.11.10",
     "types-nanoid>=2.0.0.20240601",
 ]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "admin.settings"
 
 [tool.ruff]
 line-length = 140
