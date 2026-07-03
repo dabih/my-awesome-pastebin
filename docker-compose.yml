@@ -74,8 +74,10 @@ services:
       SPRING_SECURITY_USER_NAME: ${KAFKA_UI_USER:-admin}
       SPRING_SECURITY_USER_PASSWORD: ${KAFKA_UI_PASSWORD:-admin}
     labels:
+      - "traefik.enable=true"
       - "traefik.http.routers.kafka-ui.rule=Host(`kafka-ui.localhost`)"
       - "traefik.http.routers.kafka-ui.entrypoints=web"
+      - "traefik.http.services.kafka-ui.loadbalancer.server.port=8080"
 
 # Migration Runner
   migration_runner:
@@ -200,8 +202,10 @@ services:
     volumes:
       - ./backend/web_api:/app
     labels:
+      - "traefik.enable=true"
       - "traefik.http.routers.web-api.rule=Host(`web-api.localhost`)"
       - "traefik.http.routers.web-api.entrypoints=web"
+      - "traefik.http.services.web-api.loadbalancer.server.port=8000"
     deploy:
       replicas: 3
 
@@ -224,10 +228,11 @@ services:
 
   # Load Balancer (Traefik)
   traefik:
-    image: traefik:v3.0
+    image: traefik:v2.11
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
     ports:
       - "80:80"
