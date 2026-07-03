@@ -27,21 +27,33 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING(f"Superuser {username} already exists, skipping creation"))
 
     def setup_celery_task(self):
-        task_name = "delete_expired_pastes"
-        if not PeriodicTask.objects.filter(name=task_name).exists():
-            schedule, _ = CrontabSchedule.objects.get_or_create(
-                minute="*/5",
-                hour="*",
-                day_of_week="*",
-                day_of_month="*",
-                month_of_year="*",
-            )
-            PeriodicTask.objects.create(
-                name=task_name,
-                task="pastes.tasks.delete_expired_pastes",
-                crontab=schedule,
-                enabled=True,
-            )
-            self.stdout.write(self.style.SUCCESS(f"Successfully created periodic task: {task_name}"))
-        else:
-            self.stdout.write(self.style.WARNING(f"Periodic task {task_name} already exists, skipping creation"))
+        tasks = [
+            {
+                "name": "delete_expired_pastes",
+                "task": "pastes.tasks.delete_expired_pastes",
+                "schedule": {"minute": "*/5", "hour": "*", "day_of_week": "*", "day_of_month": "*", "month_of_year": "*"},
+            },
+            {
+                "name": "generate_top_pastes_report",
+                "task": "pastes.tasks.generate_top_pastes_report",
+                "schedule": {"minute": "0", "hour": "0", "day_of_week": "*", "day_of_month": "*", "month_of_year": "*"},
+            },
+            {
+                "name": "generate_daily_frequency_report",
+                "task": "pastes.tasks.generate_daily_frequency_report",
+                "schedule": {"minute": "0", "hour": "0", "day_of_week": "*", "day_of_month": "*", "month_of_year": "*"},
+            },
+        ]
+        for task_config in tasks:
+            task_name = task_config["name"]
+            if not PeriodicTask.objects.filter(name=task_name).exists():
+                schedule, _ = CrontabSchedule.objects.get_or_create(**task_config["schedule"])
+                PeriodicTask.objects.create(
+                    name=task_name,
+                    task=task_config["task"],
+                    crontab=schedule,
+                    enabled=True,
+                )
+                self.stdout.write(self.style.SUCCESS(f"Successfully created periodic task: {task_name}"))
+            else:
+                self.stdout.write(self.style.WARNING(f"Periodic task {task_name} already exists, skipping creation"))

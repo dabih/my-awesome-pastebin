@@ -11,12 +11,14 @@ dependencies = [
     "confluent-kafka==2.0.*",
     "python-jose==3.4.*",
     "jinja2==3.1.*",
+    "nanoid>=2.0.*",
 ]
 
 [dependency-groups]
 dev = [
     "black>=25.1.0",
     "flake8>=7.2.0",
+    "flake8-pyproject>=1.2.3",
     "flake8-bandit>=4.1.1",
     "flake8-docstrings>=1.7.0",
     "flake8-isort>=6.1.2",
@@ -37,6 +39,7 @@ target-version = "py313"
 [tool.mypy]
 python_version = "3.13"
 strict = false
+ignore_missing_imports = true
 
 [tool.black]
 line-length = 140
@@ -236,6 +239,7 @@ disable = [
     "super-with-arguments",
     "unsubscriptable-object",
     "abstract-method",
+    "global-statement",
 ]
 
 [tool.pylint.typecheck]
